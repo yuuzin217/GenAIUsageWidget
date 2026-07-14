@@ -12,7 +12,7 @@ class WidgetController {
     this.slideInterval = null;
     this.hideTimeout = null;
     this.snapThreshold = 20; // px
-    this.visiblePixels = 16; // Width/height left on-screen when collapsed
+    this.visiblePixels = 30; // Width/height left on-screen when collapsed (generous size to ensure hover works)
     this.animDuration = 180; // ms
     this.animSteps = 10;
   }
