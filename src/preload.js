@@ -6,4 +6,8 @@ contextBridge.exposeInMainWorld('api', {
   getCursorUsage: () => ipcRenderer.invoke('get-cursor-usage'),
   getAntigravityUsage: () => ipcRenderer.invoke('get-antigravity-usage'),
   resizeTo: (height) => ipcRenderer.send('resize-to', height),
+  widgetDragStart: (x, y) => ipcRenderer.send('widget-drag-start', x, y),
+  widgetDragStop: () => ipcRenderer.send('widget-drag-stop'),
+  widgetMouseEnter: () => ipcRenderer.send('widget-mouse-enter'),
+  widgetMouseLeave: () => ipcRenderer.send('widget-mouse-leave'),
 });

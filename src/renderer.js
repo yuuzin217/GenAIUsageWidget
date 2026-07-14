@@ -340,3 +340,32 @@ new ResizeObserver(() => {
 
 updateAll();
 setInterval(updateAll, 60 * 1000);
+
+// --- Custom Dragging & Auto-hide for Widget Mode ---
+const isWidgetMode = new URLSearchParams(window.location.search).get('mode') === 'widget';
+
+if (isWidgetMode) {
+  const headerEl = document.querySelector('.app-header');
+  if (headerEl) {
+    headerEl.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return; // Only drag with left mouse button
+      window.api.widgetDragStart(e.clientX, e.clientY);
+
+      const handleMouseUp = () => {
+        window.api.widgetDragStop();
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+      window.addEventListener('mouseup', handleMouseUp);
+    });
+  }
+
+  const appEl = document.querySelector('.app');
+  if (appEl) {
+    appEl.addEventListener('mouseenter', () => {
+      window.api.widgetMouseEnter();
+    });
+    appEl.addEventListener('mouseleave', () => {
+      window.api.widgetMouseLeave();
+    });
+  }
+}

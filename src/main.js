@@ -6,10 +6,12 @@ const { fetchCodexUsage } = require('./providers/codex');
 const { fetchCursorUsage } = require('./providers/cursor');
 const { fetchAntigravityUsage } = require('./providers/antigravity');
 const autostart = require('./autostart');
+const WidgetController = require('./widget-controller');
 
 let tray = null;
 let popup = null;
 let widget = null;
+let widgetController = null;
 let lastTrayBounds = null;
 
 function createPopup() {
@@ -97,6 +99,8 @@ function createWidget() {
     display.workArea.y + margin,
     false,
   );
+
+  widgetController = new WidgetController(widget);
 }
 
 function toggleWidget() {
@@ -245,6 +249,22 @@ ipcMain.handle('get-antigravity-usage', async () => {
   } catch (err) {
     return { ok: false, error: err.message, notConfigured: !!err.notConfigured };
   }
+});
+
+ipcMain.on('widget-drag-start', (event, x, y) => {
+  if (widgetController) widgetController.startDrag(x, y);
+});
+
+ipcMain.on('widget-drag-stop', () => {
+  if (widgetController) widgetController.stopDrag();
+});
+
+ipcMain.on('widget-mouse-enter', () => {
+  if (widgetController) widgetController.handleMouseEnter();
+});
+
+ipcMain.on('widget-mouse-leave', () => {
+  if (widgetController) widgetController.handleMouseLeave();
 });
 
 app.whenReady().then(() => {

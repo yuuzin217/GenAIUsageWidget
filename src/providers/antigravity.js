@@ -60,38 +60,52 @@ async function callCloudCode(url, token, body) {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    throw new Error(`Antigravity request to ${url} failed: ${res.status}`);
+    let details = '';
+    try {
+      details = await res.text();
+    } catch (_) {}
+    const err = new Error(`Antigravity request to ${url} failed: ${res.status}`);
+    err.status = res.status;
+    err.details = details;
+    throw err;
   }
   return res.json();
 }
 
 async function fetchAntigravityUsage() {
-  const token = readAccessToken();
+  try {
+    const token = readAccessToken();
 
-  const loadResp = await callCloudCode(LOAD_CODE_ASSIST_URL, token, {
-    metadata: { ideName: 'antigravity' },
-  });
-  const project = loadResp.cloudaicompanionProject;
+    const loadResp = await callCloudCode(LOAD_CODE_ASSIST_URL, token, {
+      metadata: { ideName: 'antigravity' },
+    });
+    const project = loadResp.cloudaicompanionProject;
 
-  const summary = await callCloudCode(QUOTA_SUMMARY_URL, token, { project });
+    const summary = await callCloudCode(QUOTA_SUMMARY_URL, token, { project });
 
-  const groups = (summary.groups ?? []).map((group) => {
-    const buckets = (group.buckets ?? []).map((bucket) => ({
-      name: bucket.displayName || bucket.bucketId,
-      percent: bucket ? Math.round((1 - bucket.remainingFraction) * 100) : null,
-      resetsAt: bucket.resetTime ?? null,
-    }));
+    const groups = (summary.groups ?? []).map((group) => {
+      const buckets = (group.buckets ?? []).map((bucket) => ({
+        name: bucket.displayName || bucket.bucketId,
+        percent: bucket ? Math.round((1 - bucket.remainingFraction) * 100) : null,
+        resetsAt: bucket.resetTime ?? null,
+      }));
 
-    const primaryBucket = group.buckets?.[0];
-    return {
-      name: group.displayName,
-      percent: primaryBucket ? Math.round((1 - primaryBucket.remainingFraction) * 100) : null,
-      resetsAt: primaryBucket?.resetTime ?? null,
-      buckets,
-    };
-  });
+      const primaryBucket = group.buckets?.[0];
+      return {
+        name: group.displayName,
+        percent: primaryBucket ? Math.round((1 - primaryBucket.remainingFraction) * 100) : null,
+        resetsAt: primaryBucket?.resetTime ?? null,
+        buckets,
+      };
+    });
 
-  return { groups };
+    return { groups };
+  } catch (err) {
+    if (err.status === 401) {
+      throw new Error("Authentication expired. Please start VS Code or run 'agy sign-in' to refresh.");
+    }
+    throw err;
+  }
 }
 
 module.exports = { fetchAntigravityUsage };
