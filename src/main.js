@@ -40,7 +40,7 @@ function createPopup() {
   // Force strict width to prevent window stretching (Aero Snap, etc.)
   popup.on('resize', () => {
     const [w, h] = popup.getSize();
-    if (w !== 320) {
+    if (Math.abs(w - 320) > 5) {
       popup.setSize(320, h, false);
     }
   });
@@ -121,7 +121,7 @@ function createWidget() {
   // Force strict width to prevent window stretching (Aero Snap, etc.)
   widget.on('resize', () => {
     const [w, h] = widget.getSize();
-    if (w !== 300) {
+    if (Math.abs(w - 300) > 5) {
       widget.setSize(300, h, false);
     }
   });

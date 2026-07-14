@@ -63,6 +63,11 @@ class WidgetController {
       if (curX !== targetX || curY !== targetY) {
         this.win.setPosition(targetX, targetY, false);
       }
+
+      // Force strict width (300px) during drag to combat OS Aero Snap stretching
+      if (Math.abs(winWidth - 300) > 5) {
+        this.win.setSize(300, winHeight, false);
+      }
     }, 16);
   }
 
@@ -75,9 +80,15 @@ class WidgetController {
       this.dragInterval = null;
     }
 
+    // Force resize to width 300px if it got stretched at the moment of release
+    let [w, h] = this.win.getSize();
+    if (Math.abs(w - 300) > 5) {
+      this.win.setSize(300, h, false);
+      w = 300;
+    }
+
     // Determine current dock edge with some tolerance for scaling/rounding errors
     const [x, y] = this.win.getPosition();
-    const [w, h] = this.win.getSize();
     const display = screen.getDisplayNearestPoint({ x: x + w / 2, y: y + h / 2 });
     const area = display.workArea;
     const tolerance = 2;
