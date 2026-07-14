@@ -101,6 +101,10 @@ function createWidget() {
   );
 
   widgetController = new WidgetController(widget);
+
+  widget.on('maximize', () => {
+    widget.unmaximize();
+  });
 }
 
 function toggleWidget() {
@@ -213,7 +217,17 @@ ipcMain.handle('get-claude-usage', async () => {
 ipcMain.on('resize-to', (event, height) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (!win) return;
-  const [width] = win.getContentSize();
+  
+  // Force strict width to prevent window stretching (e.g. from OS aero snap or scaling changes)
+  let width = 300;
+  if (win === popup) {
+    width = 320;
+  } else if (win === widget) {
+    width = 300;
+  } else {
+    [width] = win.getContentSize();
+  }
+
   const clamped = Math.max(120, Math.min(900, Math.round(height)));
   win.setContentSize(width, clamped);
   // Keep the popup anchored to the tray (it opens above the tray on Windows,
