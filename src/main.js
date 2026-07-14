@@ -21,6 +21,7 @@ function createPopup() {
     show: false,
     frame: false,
     resizable: false,
+    maximizable: false,
     fullscreenable: false,
     skipTaskbar: true,
     webPreferences: {
@@ -34,6 +35,14 @@ function createPopup() {
   // Hide the popup when it loses focus, like a typical tray dropdown.
   popup.on('blur', () => {
     popup.hide();
+  });
+
+  // Force strict width to prevent window stretching (Aero Snap, etc.)
+  popup.on('resize', () => {
+    const [w, h] = popup.getSize();
+    if (w !== 320) {
+      popup.setSize(320, h, false);
+    }
   });
 }
 
@@ -80,6 +89,7 @@ function createWidget() {
     hasShadow: true,
     alwaysOnTop: true,
     resizable: false,
+    maximizable: false,
     fullscreenable: false,
     skipTaskbar: true,
     webPreferences: {
@@ -106,6 +116,14 @@ function createWidget() {
 
   widget.on('maximize', () => {
     widget.unmaximize();
+  });
+
+  // Force strict width to prevent window stretching (Aero Snap, etc.)
+  widget.on('resize', () => {
+    const [w, h] = widget.getSize();
+    if (w !== 300) {
+      widget.setSize(300, h, false);
+    }
   });
 }
 
