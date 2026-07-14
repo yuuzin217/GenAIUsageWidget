@@ -7,6 +7,7 @@ class WidgetController {
     this.dragOffset = { x: 0, y: 0 };
     this.dragInterval = null;
     this.dockEdge = null; // 'left', 'right', 'top', 'bottom', or null
+    this.dockDisplay = null; // Display configuration where docked
     this.isCollapsed = false;
     this.slideInterval = null;
     this.hideTimeout = null;
@@ -16,11 +17,12 @@ class WidgetController {
     this.animSteps = 10;
   }
 
-  // Start smooth window drag
   startDrag(clickX, clickY) {
+    console.log(`[debug] WidgetController.startDrag: clickX=${clickX}, clickY=${clickY}`);
     if (this.isDragging) return;
     this.isDragging = true;
     this.dragOffset = { x: clickX, y: clickY };
+    this.dockDisplay = null;
 
     // Immediately expand window if it was collapsed
     if (this.isCollapsed) {
@@ -82,15 +84,22 @@ class WidgetController {
 
     if (Math.abs(x - area.x) <= tolerance) {
       this.dockEdge = 'left';
+      this.dockDisplay = display;
     } else if (Math.abs(x - (area.x + area.width - w)) <= tolerance) {
       this.dockEdge = 'right';
+      this.dockDisplay = display;
     } else if (Math.abs(y - area.y) <= tolerance) {
       this.dockEdge = 'top';
+      this.dockDisplay = display;
     } else if (Math.abs(y - (area.y + area.height - h)) <= tolerance) {
       this.dockEdge = 'bottom';
+      this.dockDisplay = display;
     } else {
       this.dockEdge = null;
+      this.dockDisplay = null;
     }
+
+    console.log(`[debug] WidgetController.stopDrag: pos=[${x},${y}], size=[${w},${h}], dockEdge=${this.dockEdge}`);
 
     // Check if mouse is already outside window on drag stop, schedule auto-hide if so
     const cursor = screen.getCursorScreenPoint();
@@ -104,6 +113,7 @@ class WidgetController {
   }
 
   handleMouseEnter() {
+    console.log(`[debug] WidgetController.handleMouseEnter: isCollapsed=${this.isCollapsed}, dockEdge=${this.dockEdge}`);
     if (this.hideTimeout) {
       clearTimeout(this.hideTimeout);
       this.hideTimeout = null;
@@ -114,6 +124,7 @@ class WidgetController {
   }
 
   handleMouseLeave() {
+    console.log(`[debug] WidgetController.handleMouseLeave: isDragging=${this.isDragging}, dockEdge=${this.dockEdge}`);
     if (this.isDragging) return;
     if (this.dockEdge) {
       this.scheduleCollapse();
@@ -134,7 +145,7 @@ class WidgetController {
 
     const [x, y] = this.win.getPosition();
     const [w, h] = this.win.getSize();
-    const display = screen.getDisplayNearestPoint({ x: x + w / 2, y: y + h / 2 });
+    const display = this.dockDisplay || screen.getDisplayNearestPoint({ x: x + w / 2, y: y + h / 2 });
     const area = display.workArea;
 
     let startX = x, startY = y;
@@ -150,6 +161,7 @@ class WidgetController {
       endY = area.y + area.height - this.visiblePixels;
     }
 
+    console.log(`[debug] WidgetController.collapse: edge=${this.dockEdge}, from=[${startX},${startY}] to=[${endX},${endY}]`);
     this.animateSlide(startX, startY, endX, endY);
   }
 
@@ -160,7 +172,7 @@ class WidgetController {
 
     const [x, y] = this.win.getPosition();
     const [w, h] = this.win.getSize();
-    const display = screen.getDisplayNearestPoint({ x: x + w / 2, y: y + h / 2 });
+    const display = this.dockDisplay || screen.getDisplayNearestPoint({ x: x + w / 2, y: y + h / 2 });
     const area = display.workArea;
 
     let startX = x, startY = y;
@@ -176,6 +188,7 @@ class WidgetController {
       endY = area.y + area.height - h;
     }
 
+    console.log(`[debug] WidgetController.expand: immediate=${immediate}, edge=${this.dockEdge}, from=[${startX},${startY}] to=[${endX},${endY}]`);
     if (immediate) {
       if (this.slideInterval) {
         clearInterval(this.slideInterval);
@@ -196,12 +209,14 @@ class WidgetController {
     let step = 0;
     const intervalMs = this.animDuration / this.animSteps;
 
+    console.log(`[debug] WidgetController.animateSlide: start=[${startX},${startY}], end=[${endX},${endY}]`);
     this.slideInterval = setInterval(() => {
       step++;
       if (step >= this.animSteps) {
         clearInterval(this.slideInterval);
         this.slideInterval = null;
         this.win.setPosition(endX, endY, false);
+        console.log(`[debug] WidgetController.animateSlide finished: pos=`, this.win.getPosition());
       } else {
         const t = step / this.animSteps;
         const ease = t * (2 - t); // easeOutQuad
