@@ -91,6 +91,8 @@ function createWidget() {
   widget.setAlwaysOnTop(true, 'floating');
   widget.loadFile(path.join(__dirname, 'index.html'), { query: { mode: 'widget' } });
 
+  console.log(`[debug] createWidget: id=${widget.id}, initial bounds=`, widget.getBounds());
+
   const display = screen.getPrimaryDisplay();
   const margin = 16;
   const { width, height } = widget.getBounds();
@@ -220,15 +222,20 @@ ipcMain.on('resize-to', (event, height) => {
   
   // Force strict width to prevent window stretching (e.g. from OS aero snap or scaling changes)
   let width = 300;
-  if (win === popup) {
+  let type = "unknown";
+  
+  if (popup && win.id === popup.id) {
     width = 320;
-  } else if (win === widget) {
+    type = "popup";
+  } else if (widget && win.id === widget.id) {
     width = 300;
+    type = "widget";
   } else {
     [width] = win.getContentSize();
   }
 
   const clamped = Math.max(120, Math.min(900, Math.round(height)));
+  console.log(`[debug] resize-to: type=${type}, id=${win.id}, target_width=${width}, target_height=${clamped}`);
   win.setContentSize(width, clamped);
   // Keep the popup anchored to the tray (it opens above the tray on Windows,
   // so growing downward would run into the taskbar).
