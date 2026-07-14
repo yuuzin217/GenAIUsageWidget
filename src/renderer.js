@@ -334,8 +334,15 @@ containerEl.addEventListener('dragover', (event) => {
 // Keep the window hugging the card, so the transparent leftover area
 // doesn't block mouse clicks on what's behind it.
 const appEl = document.querySelector('.app');
+let lastHeight = 0;
 new ResizeObserver(() => {
-  window.api.resizeTo(Math.ceil(appEl.getBoundingClientRect().height) + 12);
+  const currentHeight = Math.ceil(appEl.getBoundingClientRect().height) + 12;
+  // Prevent infinite window size expansion loop caused by high-DPI scaling rounding errors.
+  // Only resize the window if the height change is significant (>= 5px).
+  if (Math.abs(currentHeight - lastHeight) >= 5) {
+    lastHeight = currentHeight;
+    window.api.resizeTo(currentHeight);
+  }
 }).observe(appEl);
 
 updateAll();
