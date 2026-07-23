@@ -9,6 +9,7 @@ class WidgetController {
     this.dockEdge = null; // 'left', 'right', 'top', 'bottom', or null
     this.dockDisplay = null; // Display configuration where docked
     this.isCollapsed = false;
+    this.isAnimating = false;
     this.slideInterval = null;
     this.hideTimeout = null;
     this.snapThreshold = 20; // px
@@ -25,7 +26,7 @@ class WidgetController {
     this.dockDisplay = null;
 
     // Immediately expand window if it was collapsed
-    if (this.isCollapsed) {
+    if (this.isCollapsed || this.isAnimating) {
       this.expand(true); // immediate expand without animation
     }
 
@@ -124,12 +125,13 @@ class WidgetController {
   }
 
   handleMouseEnter() {
-    console.log(`[debug] WidgetController.handleMouseEnter: isCollapsed=${this.isCollapsed}, dockEdge=${this.dockEdge}`);
+    console.log(`[debug] WidgetController.handleMouseEnter: isCollapsed=${this.isCollapsed}, isAnimating=${this.isAnimating}, dockEdge=${this.dockEdge}`);
     if (this.hideTimeout) {
       clearTimeout(this.hideTimeout);
       this.hideTimeout = null;
     }
-    if (this.isCollapsed) {
+    // Only expand if collapsed and not currently animating collapse
+    if (this.isCollapsed && !this.isAnimating) {
       this.expand();
     }
   }
@@ -151,8 +153,8 @@ class WidgetController {
 
   // Slide window out of view
   collapse() {
-    if (!this.dockEdge || this.isCollapsed) return;
-    this.isCollapsed = true;
+    if (!this.dockEdge || this.isCollapsed || this.isAnimating) return;
+    this.isAnimating = true;
 
     const [x, y] = this.win.getPosition();
     const [w, h] = this.win.getSize();
@@ -173,13 +175,15 @@ class WidgetController {
     }
 
     console.log(`[debug] WidgetController.collapse: edge=${this.dockEdge}, from=[${startX},${startY}] to=[${endX},${endY}]`);
-    this.animateSlide(startX, startY, endX, endY);
+    this.animateSlide(startX, startY, endX, endY, () => {
+      this.isCollapsed = true;
+      this.isAnimating = false;
+    });
   }
 
   // Slide window back into view
   expand(immediate = false) {
-    if (!this.isCollapsed) return;
-    this.isCollapsed = false;
+    if ((!this.isCollapsed && !immediate) || (this.isAnimating && !immediate)) return;
 
     const [x, y] = this.win.getPosition();
     const [w, h] = this.win.getSize();
@@ -205,14 +209,20 @@ class WidgetController {
         clearInterval(this.slideInterval);
         this.slideInterval = null;
       }
+      this.isCollapsed = false;
+      this.isAnimating = false;
       this.win.setPosition(endX, endY, false);
     } else {
-      this.animateSlide(startX, startY, endX, endY);
+      this.isAnimating = true;
+      this.animateSlide(startX, startY, endX, endY, () => {
+        this.isCollapsed = false;
+        this.isAnimating = false;
+      });
     }
   }
 
   // Control sliding animation using easeOutQuad
-  animateSlide(startX, startY, endX, endY) {
+  animateSlide(startX, startY, endX, endY, onComplete) {
     if (this.slideInterval) {
       clearInterval(this.slideInterval);
     }
@@ -227,6 +237,7 @@ class WidgetController {
         clearInterval(this.slideInterval);
         this.slideInterval = null;
         this.win.setPosition(endX, endY, false);
+        if (onComplete) onComplete();
         console.log(`[debug] WidgetController.animateSlide finished: pos=`, this.win.getPosition());
       } else {
         const t = step / this.animSteps;
