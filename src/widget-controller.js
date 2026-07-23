@@ -45,17 +45,17 @@ class WidgetController {
       const display = screen.getDisplayNearestPoint(cursor);
       const area = display.workArea;
 
-      // Horizontal snapping
-      if (Math.abs(targetX - area.x) < this.snapThreshold) {
+      // Horizontal snapping (Left or Right)
+      if (targetX <= area.x || Math.abs(targetX - area.x) < this.snapThreshold) {
         targetX = area.x;
-      } else if (Math.abs((targetX + winWidth) - (area.x + area.width)) < this.snapThreshold) {
+      } else if ((targetX + winWidth) >= (area.x + area.width) || Math.abs((targetX + winWidth) - (area.x + area.width)) < this.snapThreshold) {
         targetX = area.x + area.width - winWidth;
       }
 
-      // Vertical snapping
-      if (Math.abs(targetY - area.y) < this.snapThreshold) {
+      // Vertical snapping (Top or Bottom)
+      if (targetY <= area.y || Math.abs(targetY - area.y) < this.snapThreshold) {
         targetY = area.y;
-      } else if (Math.abs((targetY + winHeight) - (area.y + area.height)) < this.snapThreshold) {
+      } else if ((targetY + winHeight) >= (area.y + area.height) || Math.abs((targetY + winHeight) - (area.y + area.height)) < this.snapThreshold) {
         targetY = area.y + area.height - winHeight;
       }
 
@@ -94,16 +94,16 @@ class WidgetController {
     const area = display.workArea;
     const tolerance = this.snapThreshold; // Use 20px tolerance so snapping reliably triggers docking
 
-    if (Math.abs(x - area.x) <= tolerance) {
+    if (x <= area.x || Math.abs(x - area.x) <= tolerance) {
       this.dockEdge = 'left';
       this.dockDisplay = display;
-    } else if (Math.abs(x - (area.x + area.width - w)) <= tolerance) {
+    } else if ((x + w) >= (area.x + area.width) || Math.abs(x - (area.x + area.width - w)) <= tolerance) {
       this.dockEdge = 'right';
       this.dockDisplay = display;
-    } else if (Math.abs(y - area.y) <= tolerance) {
+    } else if (y <= area.y || Math.abs(y - area.y) <= tolerance) {
       this.dockEdge = 'top';
       this.dockDisplay = display;
-    } else if (Math.abs(y - (area.y + area.height - h)) <= tolerance) {
+    } else if ((y + h) >= (area.y + area.height) || Math.abs(y - (area.y + area.height - h)) <= tolerance) {
       this.dockEdge = 'bottom';
       this.dockDisplay = display;
     } else {
