@@ -126,6 +126,22 @@ class WidgetController {
 
   handleMouseEnter() {
     console.log(`[debug] WidgetController.handleMouseEnter: isCollapsed=${this.isCollapsed}, isAnimating=${this.isAnimating}, dockEdge=${this.dockEdge}`);
+    
+    // Check if physical cursor is actually inside the window bounds
+    const cursor = screen.getCursorScreenPoint();
+    const [x, y] = this.win.getPosition();
+    const [w, h] = this.win.getSize();
+    const inWindow = (
+      cursor.x >= x && cursor.x <= x + w &&
+      cursor.y >= y && cursor.y <= y + h
+    );
+
+    // If mouseenter was triggered while cursor is actually outside non-collapsed window, ignore it
+    if (!inWindow && !this.isCollapsed) {
+      console.log(`[debug] WidgetController.handleMouseEnter ignored: cursor is actually outside window`);
+      return;
+    }
+
     if (this.hideTimeout) {
       clearTimeout(this.hideTimeout);
       this.hideTimeout = null;
@@ -146,8 +162,21 @@ class WidgetController {
 
   scheduleCollapse() {
     if (this.hideTimeout) clearTimeout(this.hideTimeout);
+    console.log(`[debug] WidgetController.scheduleCollapse: starting 1000ms timer`);
     this.hideTimeout = setTimeout(() => {
-      this.collapse();
+      this.hideTimeout = null;
+      // Double check physical cursor position before collapsing
+      const cursor = screen.getCursorScreenPoint();
+      const [x, y] = this.win.getPosition();
+      const [w, h] = this.win.getSize();
+      const inWindow = (
+        cursor.x >= x && cursor.x <= x + w &&
+        cursor.y >= y && cursor.y <= y + h
+      );
+      console.log(`[debug] WidgetController timer expired: inWindow=${inWindow}, dockEdge=${this.dockEdge}, isCollapsed=${this.isCollapsed}`);
+      if (!inWindow && this.dockEdge && !this.isCollapsed) {
+        this.collapse();
+      }
     }, 1000);
   }
 
