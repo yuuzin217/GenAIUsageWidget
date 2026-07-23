@@ -87,11 +87,11 @@ class WidgetController {
       w = 300;
     }
 
-    // Determine current dock edge with some tolerance for scaling/rounding errors
+    // Determine current dock edge using snapThreshold tolerance so docking is reliably detected
     const [x, y] = this.win.getPosition();
     const display = screen.getDisplayNearestPoint({ x: x + w / 2, y: y + h / 2 });
     const area = display.workArea;
-    const tolerance = 2;
+    const tolerance = this.snapThreshold; // Use 20px tolerance so snapping reliably triggers docking
 
     if (Math.abs(x - area.x) <= tolerance) {
       this.dockEdge = 'left';
